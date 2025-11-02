@@ -1,0 +1,75 @@
+import { useState, useEffect } from 'react';
+import { Side, Post } from '@/types';
+import { postsAPI } from '@/api/posts';
+import { Navbar } from '@/components/Navbar';
+import { PostCard } from '@/components/PostCard';
+import { SideToggle } from '@/components/SideToggle';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import toast from 'react-hot-toast';
+
+export default function Feed() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<Side | 'all'>('all');
+
+  useEffect(() => {
+    loadPosts();
+  }, [filter]);
+
+  const loadPosts = async () => {
+    setLoading(true);
+    try {
+      const data = await postsAPI.getPosts(filter === 'all' ? undefined : filter);
+      setPosts(data);
+    } catch (error) {
+      toast.error('Failed to load posts');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLike = async (postId: string) => {
+    try {
+      await postsAPI.likePost(postId);
+      toast.success('Post liked!');
+      // In a real app, this would update the post's like count
+    } catch (error) {
+      toast.error('Failed to like post');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-serif font-bold mb-2">Discover Recipes</h1>
+            <p className="text-muted-foreground">
+              Explore amazing {filter === 'all' ? 'coffee and tea' : filter} recipes from the community
+            </p>
+          </div>
+          <SideToggle selected={filter} onChange={setFilter} />
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <LoadingSpinner />
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground text-lg">No posts found. Be the first to share!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {posts.map((post) => (
+              <PostCard key={post._id} post={post} onLike={handleLike} />
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
