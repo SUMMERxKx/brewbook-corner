@@ -23,12 +23,26 @@ export default function CreatePost() {
     setLoading(true);
     
     try {
-      await postsAPI.createPost({ title, description, imageUrl });
+      // Validate imageUrl before submitting
+      if (!imageUrl || imageUrl.trim() === '') {
+        toast.error('Please provide an image URL');
+        return;
+      }
+
+      // Log what we're sending
+      console.log('Creating post with data:', { title, description, imageUrl });
+
+      const createdPost = await postsAPI.createPost({ title, description, imageUrl });
+      
+      // Log the response
+      console.log('Post created successfully:', createdPost);
+      
       toast.success('Post created successfully!');
       navigate('/feed');
-    } catch (error) {
-      toast.error('Failed to create post');
-      console.error(error);
+    } catch (error: any) {
+      console.error('Error creating post:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create post';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Side, Post } from '@/types';
 import { postsAPI } from '@/api/posts';
 import { Navbar } from '@/components/Navbar';
@@ -11,10 +12,11 @@ export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Side | 'all'>('all');
+  const location = useLocation();
 
   useEffect(() => {
     loadPosts();
-  }, [filter]);
+  }, [filter, location.key]); // Reload when filter changes or when navigating to this page
 
   const loadPosts = async () => {
     setLoading(true);
@@ -33,7 +35,8 @@ export default function Feed() {
     try {
       await postsAPI.likePost(postId);
       toast.success('Post liked!');
-      // In a real app, this would update the post's like count
+      // Refresh posts to get updated like count
+      await loadPosts();
     } catch (error) {
       toast.error('Failed to like post');
     }

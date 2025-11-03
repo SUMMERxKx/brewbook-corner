@@ -117,11 +117,21 @@ export default function PostDetail() {
           {/* Image Section */}
           <div className="space-y-4">
             <Card className="overflow-hidden">
-              <img
-                src={post.imageUrl}
-                alt={post.title}
-                className="w-full aspect-square object-cover"
-              />
+              {post.imageUrl ? (
+                <img
+                  src={post.imageUrl}
+                  alt={post.title}
+                  className="w-full aspect-square object-cover"
+                  onError={(e) => {
+                    // Fallback image if URL fails to load
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80';
+                  }}
+                />
+              ) : (
+                <div className="w-full aspect-square flex items-center justify-center bg-muted">
+                  <SideIcon className={`w-24 h-24 ${sideColor} opacity-50`} />
+                </div>
+              )}
             </Card>
 
             <Card className="p-4">

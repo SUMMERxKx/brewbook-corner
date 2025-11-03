@@ -34,13 +34,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
       <Card className="overflow-hidden hover:shadow-hover transition-smooth">
         <Link to={`/post/${post._id}`}>
           <div className="aspect-square overflow-hidden bg-muted">
-            <motion.img
-              src={post.imageUrl}
-              alt={post.title}
-              className="w-full h-full object-cover"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            />
+            {post.imageUrl ? (
+              <motion.img
+                src={post.imageUrl}
+                alt={post.title}
+                className="w-full h-full object-cover"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+                onError={(e) => {
+                  // Fallback image if URL fails to load
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80';
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-muted">
+                <SideIcon className={`w-16 h-16 ${sideColor} opacity-50`} />
+              </div>
+            )}
           </div>
         </Link>
 

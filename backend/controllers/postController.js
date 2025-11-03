@@ -102,6 +102,14 @@ const createPost = async (req, res) => {
   try {
     const { title, description, imageUrl } = req.body;
 
+    // Debug logging
+    console.log("Creating post with data:", { title, description, imageUrl });
+
+    // Validate imageUrl is provided
+    if (!imageUrl || imageUrl.trim() === "") {
+      return res.status(400).json({ message: "Image URL is required" });
+    }
+
     // Get user to determine their side
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -113,8 +121,15 @@ const createPost = async (req, res) => {
       userId: req.user.id,
       title,
       description,
-      imageUrl,
+      imageUrl: imageUrl.trim(), // Trim whitespace
       side: user.side
+    });
+
+    // Debug: Log saved post
+    console.log("Post created successfully:", {
+      id: post._id,
+      title: post.title,
+      imageUrl: post.imageUrl
     });
 
     // Populate user info and format response
@@ -124,7 +139,7 @@ const createPost = async (req, res) => {
       _id: post._id.toString(),
       title: post.title,
       description: post.description,
-      imageUrl: post.imageUrl,
+      imageUrl: post.imageUrl, // Ensure imageUrl is included
       side: post.side,
       user: {
         username: post.userId.username,
@@ -136,8 +151,15 @@ const createPost = async (req, res) => {
       createdAt: post.createdAt.toISOString()
     };
 
+    // Debug: Log response
+    console.log("Sending formatted post:", {
+      _id: formattedPost._id,
+      imageUrl: formattedPost.imageUrl
+    });
+
     res.status(201).json(formattedPost);
   } catch (err) {
+    console.error("Error creating post:", err);
     res.status(500).json({ error: err.message });
   }
 };
