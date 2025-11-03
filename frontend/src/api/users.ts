@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { UserProfile, Post, User } from '@/types';
+import { UserProfile, Post, User, SearchUser } from '@/types';
 
 export interface UserProfileResponse {
   profile: UserProfile;
@@ -37,6 +37,33 @@ export const usersAPI = {
 
   async removeFriend(userId: string): Promise<{ message: string }> {
     const response = await axiosInstance.delete<{ message: string }>(`/api/users/${userId}/remove-friend`);
+    return response.data;
+  },
+
+  async sendFriendRequest(userId: string): Promise<{ message: string }> {
+    const response = await axiosInstance.post<{ message: string }>(`/api/users/${userId}/send-request`);
+    return response.data;
+  },
+
+  async acceptFriendRequest(userId: string): Promise<{ message: string }> {
+    const response = await axiosInstance.post<{ message: string }>(`/api/users/${userId}/accept-request`);
+    return response.data;
+  },
+
+  async rejectFriendRequest(userId: string): Promise<{ message: string }> {
+    const response = await axiosInstance.post<{ message: string }>(`/api/users/${userId}/reject-request`);
+    return response.data;
+  },
+
+  async getFriendRequests(userId: string): Promise<{ incoming: User[]; outgoing: User[] }> {
+    const response = await axiosInstance.get<{ incoming: User[]; outgoing: User[] }>(`/api/users/${userId}/requests`);
+    return response.data;
+  },
+
+  async searchUsers(query: string): Promise<SearchUser[]> {
+    const response = await axiosInstance.get<SearchUser[]>(`/api/users/search`, {
+      params: { query }
+    });
     return response.data;
   },
 };

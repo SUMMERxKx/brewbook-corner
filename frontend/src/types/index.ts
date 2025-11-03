@@ -68,10 +68,12 @@ export interface CreateCommentData {
   text: string;
 }
 
+export type RelationType = 'none' | 'friends' | 'pending_sent' | 'pending_received';
+
 export interface UserProfile {
   _id: string;
   username: string;
-  email: string;
+  email?: string; // Optional - hidden from public profiles
   side: Side;
   bio: string;
   points: number;
@@ -81,6 +83,30 @@ export interface UserProfile {
   createdAt: string;
   isOwnProfile: boolean;
   isFriend?: boolean;
+  relation?: RelationType;
+}
+
+export interface Notification {
+  _id: string;
+  sender: {
+    _id: string;
+    username: string;
+    side: Side;
+  };
+  type: 'like' | 'comment' | 'friend_request' | 'friend_accept';
+  message: string;
+  read: boolean;
+  postId?: string;
+  postTitle?: string;
+  createdAt: string;
+}
+
+export interface SearchUser {
+  _id: string;
+  username: string;
+  side: Side;
+  badges: string[];
+  points: number;
 }
 
 export interface Chat {

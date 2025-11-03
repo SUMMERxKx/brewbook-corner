@@ -28,9 +28,24 @@ const addComment = async (req, res) => {
 
     // Populate user info
     await comment.populate("userId", "username side");
+    
+    // Get current user for notifications
+    const currentUser = await User.findById(req.user.id);
 
     // Get updated post with all comments
     const updatedPost = await Post.findById(postId).populate("userId", "username side");
+    
+    // Create comment notification if comment is not from post owner
+    if (updatedPost.userId.toString() !== req.user.id) {
+      const Notification = require("../models/Notification");
+      await Notification.create({
+        user: updatedPost.userId._id,
+        sender: req.user.id,
+        type: "comment",
+        message: `${currentUser.username} commented on your post`,
+        postId: postId
+      });
+    }
     const comments = await Comment.find({ postId })
       .populate("userId", "username side")
       .sort({ createdAt: 1 });

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Coffee, Leaf, Edit2, Save, X, Users, Grid3x3, UserPlus, AlertCircle, MessageCircle, UserMinus } from 'lucide-react';
+import { Coffee, Leaf, Edit2, Save, X, Users, Grid3x3, UserPlus, AlertCircle, MessageCircle, UserMinus, CheckCircle2, XCircle } from 'lucide-react';
 import { usersAPI } from '@/api/users';
 import { chatAPI } from '@/api/chat';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,6 +42,9 @@ export default function UserProfile() {
   const [addingFriend, setAddingFriend] = useState(false);
   const [removingFriend, setRemovingFriend] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [acceptingRequest, setAcceptingRequest] = useState(false);
+  const [rejectingRequest, setRejectingRequest] = useState(false);
 
   useEffect(() => {
     if (username) {
@@ -112,6 +115,54 @@ export default function UserProfile() {
       toast.error(errorMessage);
     } finally {
       setSwitchingSide(false);
+    }
+  };
+
+  const handleSendFriendRequest = async () => {
+    if (!profile) return;
+    
+    setSendingRequest(true);
+    try {
+      await usersAPI.sendFriendRequest(profile._id);
+      toast.success('Friend request sent successfully');
+      loadProfile(); // Refresh to update relation status
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to send friend request';
+      toast.error(errorMessage);
+    } finally {
+      setSendingRequest(false);
+    }
+  };
+
+  const handleAcceptFriendRequest = async () => {
+    if (!profile) return;
+    
+    setAcceptingRequest(true);
+    try {
+      await usersAPI.acceptFriendRequest(profile._id);
+      toast.success('Friend request accepted');
+      loadProfile(); // Refresh to update relation status
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to accept friend request';
+      toast.error(errorMessage);
+    } finally {
+      setAcceptingRequest(false);
+    }
+  };
+
+  const handleRejectFriendRequest = async () => {
+    if (!profile) return;
+    
+    setRejectingRequest(true);
+    try {
+      await usersAPI.rejectFriendRequest(profile._id);
+      toast.success('Friend request rejected');
+      loadProfile(); // Refresh to update relation status
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to reject friend request';
+      toast.error(errorMessage);
+    } finally {
+      setRejectingRequest(false);
     }
   };
 
@@ -250,7 +301,9 @@ export default function UserProfile() {
                     <div>
                       <h1 className="text-3xl font-serif font-bold mb-2">{profile.username}</h1>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{profile.email}</span>
+                        {profile.isOwnProfile && profile.email && (
+                          <span>{profile.email}</span>
+                        )}
                         <span className="flex items-center gap-1">
                           <SideIcon className={`w-4 h-4 ${sideColor}`} />
                           <span className="capitalize">{profile.side}</span>
@@ -258,10 +311,52 @@ export default function UserProfile() {
                       </div>
                     </div>
 
-                    {/* Add Friend / Unfriend / Start Chat Buttons (if not own profile) */}
+                    {/* Friend Request / Unfriend / Start Chat Buttons (if not own profile) */}
                     {!profile.isOwnProfile && currentUser && (
                       <div className="flex gap-2">
-                        {profile.isFriend ? (
+                        {profile.relation === 'none' && (
+                          <Button
+                            onClick={handleSendFriendRequest}
+                            disabled={sendingRequest}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            {sendingRequest ? 'Sending...' : 'Send Friend Request'}
+                          </Button>
+                        )}
+                        {profile.relation === 'pending_sent' && (
+                          <Button
+                            disabled
+                            variant="outline"
+                            size="sm"
+                          >
+                            Request Sent
+                          </Button>
+                        )}
+                        {profile.relation === 'pending_received' && (
+                          <>
+                            <Button
+                              onClick={handleAcceptFriendRequest}
+                              disabled={acceptingRequest}
+                              variant="default"
+                              size="sm"
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-2" />
+                              {acceptingRequest ? 'Accepting...' : 'Accept'}
+                            </Button>
+                            <Button
+                              onClick={handleRejectFriendRequest}
+                              disabled={rejectingRequest}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <XCircle className="w-4 h-4 mr-2" />
+                              {rejectingRequest ? 'Rejecting...' : 'Reject'}
+                            </Button>
+                          </>
+                        )}
+                        {profile.relation === 'friends' && (
                           <Button
                             onClick={handleRemoveFriend}
                             disabled={removingFriend}
@@ -270,16 +365,6 @@ export default function UserProfile() {
                           >
                             <UserMinus className="w-4 h-4 mr-2" />
                             {removingFriend ? 'Removing...' : 'Unfriend'}
-                          </Button>
-                        ) : (
-                          <Button
-                            onClick={handleAddFriend}
-                            disabled={addingFriend}
-                            variant="outline"
-                            size="sm"
-                          >
-                            <UserPlus className="w-4 h-4 mr-2" />
-                            {addingFriend ? 'Adding...' : 'Add Friend'}
                           </Button>
                         )}
                         <Button

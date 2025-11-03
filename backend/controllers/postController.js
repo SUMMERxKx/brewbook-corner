@@ -226,6 +226,9 @@ const likePost = async (req, res) => {
     // Get post owner
     const postOwner = await User.findById(post.userId);
     
+    // Get current user for notifications
+    const currentUser = await User.findById(userId);
+    
     // Toggle like
     if (likedIndex > -1) {
       post.likes.splice(likedIndex, 1);
@@ -244,6 +247,16 @@ const likePost = async (req, res) => {
         postOwner.points = (postOwner.points || 0) + 2;
         postOwner.badges = updateBadges(postOwner.points);
         await postOwner.save();
+        
+        // Create like notification
+        const Notification = require("../models/Notification");
+        await Notification.create({
+          user: postOwner._id,
+          sender: userId,
+          type: "like",
+          message: `${currentUser.username} liked your post`,
+          postId: post._id
+        });
       }
     }
 

@@ -1,12 +1,19 @@
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Coffee, Plus, LogOut, User } from 'lucide-react';
+import { Coffee, Plus, LogOut, User, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useThemeSetter } from '@/hooks/useThemeSetter';
 import { Button } from './ui/button';
+import { SearchBar } from './SearchBar';
+import { NotificationsDropdown } from './NotificationsDropdown';
 import { motion } from 'framer-motion';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  
+  // Automatically set theme based on user's side
+  useThemeSetter();
 
   const handleLogout = async () => {
     await logout();
@@ -45,10 +52,14 @@ export const Navbar = () => {
                 </Link>
                 
                 <Link to="/chat">
-                  <Button variant="ghost" size="sm">
-                    Chat
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <MessageCircle className="w-4 h-4" /> Chat
                   </Button>
                 </Link>
+
+                <SearchBar />
+                
+                <NotificationsDropdown />
                 
                 <div className="flex items-center gap-3 pl-4 border-l">
                   <Link to={`/user/${user.username}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
