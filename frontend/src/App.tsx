@@ -13,13 +13,15 @@ import ResetPassword from "./pages/ResetPassword";
 import Feed from "./pages/Feed";
 import CreatePost from "./pages/CreatePost";
 import PostDetail from "./pages/PostDetail";
+import UserProfile from "./pages/UserProfile";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <TooltipProvider>
           <Sonner />
@@ -60,6 +62,22 @@ const App = () => (
               element={
                 <PrivateRoute>
                   <PostDetail />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/user/:username" 
+              element={
+                <PrivateRoute>
+                  <UserProfile />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/chat/:id?" 
+              element={
+                <PrivateRoute>
+                  <Chat />
                 </PrivateRoute>
               } 
             />

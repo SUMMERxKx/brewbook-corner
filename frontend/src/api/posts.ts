@@ -29,4 +29,9 @@ export const postsAPI = {
     const response = await axiosInstance.post<Post>(`/api/posts/${postId}/like`);
     return response.data;
   },
+
+  async deletePost(postId: string): Promise<{ message: string }> {
+    const response = await axiosInstance.delete<{ message: string }>(`/api/posts/${postId}`);
+    return response.data;
+  },
 };

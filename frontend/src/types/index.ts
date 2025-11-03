@@ -6,6 +6,11 @@ export interface User {
   email: string;
   side: Side;
   avatar?: string;
+  bio?: string;
+  points?: number;
+  badges?: string[];
+  friendsCount?: number;
+  postsCount?: number;
 }
 
 export interface Comment {
@@ -24,6 +29,7 @@ export interface Post {
   description: string;
   imageUrl: string;
   side: Side;
+  userId?: string; // User ID for ownership checks
   user: {
     username: string;
     side: Side;
@@ -60,4 +66,46 @@ export interface CreatePostData {
 
 export interface CreateCommentData {
   text: string;
+}
+
+export interface UserProfile {
+  _id: string;
+  username: string;
+  email: string;
+  side: Side;
+  bio: string;
+  points: number;
+  badges: string[];
+  postsCount: number;
+  friendsCount: number;
+  createdAt: string;
+  isOwnProfile: boolean;
+  isFriend?: boolean;
+}
+
+export interface Chat {
+  _id: string;
+  members: User[];
+  messages: ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessage {
+  _id: string;
+  sender: string;
+  senderName?: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface ChatListItem {
+  _id: string;
+  otherMember: User | null;
+  lastMessage: {
+    text: string;
+    createdAt: string;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
 }

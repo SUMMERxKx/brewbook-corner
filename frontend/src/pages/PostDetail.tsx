@@ -1,24 +1,38 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, Coffee, Leaf } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, Heart, Coffee, Leaf, Trash2, AlertCircle } from 'lucide-react';
 import { Post } from '@/types';
 import { postsAPI } from '@/api/posts';
+import { useAuth } from '@/hooks/useAuth';
 import { Navbar } from '@/components/Navbar';
 import { CommentList } from '@/components/CommentList';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
 export default function PostDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -67,6 +81,25 @@ export default function PostDetail() {
       setSubmitting(false);
     }
   };
+
+  const handleDelete = async () => {
+    if (!post) return;
+    
+    setDeleting(true);
+    try {
+      await postsAPI.deletePost(post._id);
+      toast.success('Post deleted successfully');
+      navigate('/feed');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete post';
+      toast.error(errorMessage);
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  const isOwnPost = user && post && post.userId === user._id;
 
   if (loading) {
     return (
@@ -117,21 +150,34 @@ export default function PostDetail() {
           {/* Image Section */}
           <div className="space-y-4">
             <Card className="overflow-hidden">
-              {post.imageUrl ? (
-                <img
-                  src={post.imageUrl}
-                  alt={post.title}
-                  className="w-full aspect-square object-cover"
-                  onError={(e) => {
-                    // Fallback image if URL fails to load
-                    e.currentTarget.src = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80';
-                  }}
-                />
-              ) : (
-                <div className="w-full aspect-square flex items-center justify-center bg-muted">
-                  <SideIcon className={`w-24 h-24 ${sideColor} opacity-50`} />
-                </div>
-              )}
+                {post.imageUrl ? (
+                  <div className="w-full aspect-square relative">
+                    <img
+                      src={post.imageUrl}
+                      alt={post.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error(`❌ Failed to load image for post ${post._id}:`, post.imageUrl);
+                        // Hide broken image and show placeholder
+                        e.currentTarget.style.display = 'none';
+                        const placeholder = e.currentTarget.parentElement?.querySelector('.image-placeholder');
+                        if (placeholder) {
+                          (placeholder as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                    />
+                    <div 
+                      className="image-placeholder w-full h-full absolute inset-0 hidden items-center justify-center bg-muted flex-col gap-3"
+                    >
+                      <SideIcon className={`w-24 h-24 ${sideColor} opacity-50`} />
+                      <p className="text-muted-foreground">Image unavailable</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full aspect-square flex items-center justify-center bg-muted">
+                    <SideIcon className={`w-24 h-24 ${sideColor} opacity-50`} />
+                  </div>
+                )}
             </Card>
 
             <Card className="p-4">
@@ -158,24 +204,38 @@ export default function PostDetail() {
           {/* Content Section */}
           <div className="space-y-6">
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                {post.user.avatar ? (
-                  <img
-                    src={post.user.avatar}
-                    alt={post.user.username}
-                    className="w-12 h-12 rounded-full"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                    <SideIcon className={`w-6 h-6 ${sideColor}`} />
+              <div className="flex items-center justify-between mb-4">
+                <Link to={`/user/${post.user.username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                  {post.user.avatar ? (
+                    <img
+                      src={post.user.avatar}
+                      alt={post.user.username}
+                      className="w-12 h-12 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                      <SideIcon className={`w-6 h-6 ${sideColor}`} />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium">{post.user.username}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(post.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
+                </Link>
+                
+                {isOwnPost && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setShowDeleteDialog(true)}
+                    disabled={deleting}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
                 )}
-                <div>
-                  <p className="font-medium">{post.user.username}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(post.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
               </div>
 
               <h1 className="text-3xl font-serif font-bold mb-4">{post.title}</h1>
@@ -207,6 +267,31 @@ export default function PostDetail() {
           </div>
         </motion.div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="text-destructive" />
+              Delete Post?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone. All comments on this post will also be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete Post'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -15,13 +15,20 @@ export default function Feed() {
   const location = useLocation();
 
   useEffect(() => {
+    // Always reload when component mounts or location changes
     loadPosts();
-  }, [filter, location.key]); // Reload when filter changes or when navigating to this page
+  }, [filter, location.key, location.state]); // Reload when filter changes or when navigating to this page
 
   const loadPosts = async () => {
     setLoading(true);
     try {
+      // Add cache-busting timestamp to ensure fresh data
       const data = await postsAPI.getPosts(filter === 'all' ? undefined : filter);
+      console.log('Loaded posts:', data.length);
+      // Log first post's imageUrl to debug
+      if (data.length > 0) {
+        console.log('First post imageUrl:', data[0].imageUrl);
+      }
       setPosts(data);
     } catch (error) {
       toast.error('Failed to load posts');

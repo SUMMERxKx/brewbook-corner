@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getPosts, getPost, createPost, likePost } = require("../controllers/postController");
+const { getPosts, getPost, createPost, likePost, deletePost } = require("../controllers/postController");
 const { addComment } = require("../controllers/commentController");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -18,6 +18,9 @@ router.post("/:id/like", authMiddleware, likePost);
 
 // Add a comment to a post (requires authentication)
 router.post("/:id/comments", authMiddleware, addComment);
+
+// Delete a post (requires authentication)
+router.delete("/:id", authMiddleware, deletePost);
 
 module.exports = router;
 

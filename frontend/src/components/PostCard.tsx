@@ -33,19 +33,34 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
     >
       <Card className="overflow-hidden hover:shadow-hover transition-smooth">
         <Link to={`/post/${post._id}`}>
-          <div className="aspect-square overflow-hidden bg-muted">
+          <div className="aspect-square overflow-hidden bg-muted relative">
             {post.imageUrl ? (
-              <motion.img
-                src={post.imageUrl}
-                alt={post.title}
-                className="w-full h-full object-cover"
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.3 }}
-                onError={(e) => {
-                  // Fallback image if URL fails to load
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80';
-                }}
-              />
+              <>
+                <motion.img
+                  key={`${post._id}-${post.imageUrl}`}
+                  src={post.imageUrl}
+                  alt={post.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                  onError={(e) => {
+                    console.error(`❌ Failed to load image for post ${post._id}:`, post.imageUrl);
+                    // Hide broken image and show placeholder
+                    e.currentTarget.style.display = 'none';
+                    const placeholder = e.currentTarget.parentElement?.querySelector('.image-placeholder');
+                    if (placeholder) {
+                      (placeholder as HTMLElement).style.display = 'flex';
+                    }
+                  }}
+                />
+                <div 
+                  className="image-placeholder w-full h-full absolute inset-0 hidden items-center justify-center bg-muted flex-col gap-2"
+                >
+                  <SideIcon className={`w-16 h-16 ${sideColor} opacity-50`} />
+                  <p className="text-xs text-muted-foreground">Image unavailable</p>
+                </div>
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-muted">
                 <SideIcon className={`w-16 h-16 ${sideColor} opacity-50`} />
@@ -67,10 +82,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
                 <SideIcon className={`w-4 h-4 ${sideColor}`} />
               </div>
             )}
-            <div className="flex-1 min-w-0">
+            <Link to={`/user/${post.user.username}`} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
               <p className="text-sm font-medium truncate">{post.user.username}</p>
               <p className="text-xs text-muted-foreground">{formatDate(post.createdAt)}</p>
-            </div>
+            </Link>
             <SideIcon className={`w-5 h-5 ${sideColor}`} />
           </div>
 
@@ -97,7 +112,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               <MessageCircle className="w-4 h-4" />
-              <span>{post.comments.length}</span>
+              <span>{post.comments?.length || 0}</span>
             </Link>
           </div>
         </div>

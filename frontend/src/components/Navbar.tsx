@@ -44,8 +44,14 @@ export const Navbar = () => {
                   </Button>
                 </Link>
                 
+                <Link to="/chat">
+                  <Button variant="ghost" size="sm">
+                    Chat
+                  </Button>
+                </Link>
+                
                 <div className="flex items-center gap-3 pl-4 border-l">
-                  <div className="flex items-center gap-2">
+                  <Link to={`/user/${user.username}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     {user.avatar ? (
                       <img
                         src={user.avatar}
@@ -63,7 +69,7 @@ export const Navbar = () => {
                         {user.side === 'coffee' ? '☕' : '🍵'} {user.side} lover
                       </p>
                     </div>
-                  </div>
+                  </Link>
                   
                   <Button
                     variant="ghost"
