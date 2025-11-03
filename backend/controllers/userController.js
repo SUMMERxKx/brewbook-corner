@@ -75,18 +75,20 @@ const getUserProfile = async (req, res) => {
       // Check if already friends
       const isFriend = user.friends && user.friends.some(f => f.toString() === currentUserId);
       
-      // Check if request was sent (current user sent to profile owner)
-      const requestSent = user.friendRequests && user.friendRequests.some(f => f.toString() === currentUserId);
+      // Check if current user sent a request to profile owner
+      // Profile owner's friendRequests contains currentUserId = current user sent request
+      const requestSentByCurrentUser = user.friendRequests && user.friendRequests.some(f => f.toString() === currentUserId);
       
-      // Check if request was received (profile owner sent to current user)
-      const requestReceived = user.sentRequests && user.sentRequests.some(f => f.toString() === currentUserId);
+      // Check if profile owner sent a request to current user
+      // Profile owner's sentRequests contains currentUserId = profile owner sent request to current user
+      const requestSentByProfileOwner = user.sentRequests && user.sentRequests.some(f => f.toString() === currentUserId);
       
       if (isFriend) {
         relation = "friends";
-      } else if (requestSent) {
-        relation = "pending_received"; // Current user received request from profile owner
-      } else if (requestReceived) {
+      } else if (requestSentByCurrentUser) {
         relation = "pending_sent"; // Current user sent request to profile owner
+      } else if (requestSentByProfileOwner) {
+        relation = "pending_received"; // Current user received request from profile owner
       }
     }
 
