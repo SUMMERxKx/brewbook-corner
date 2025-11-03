@@ -62,7 +62,7 @@ export const usersAPI = {
 
   async searchUsers(query: string): Promise<SearchUser[]> {
     const response = await axiosInstance.get<SearchUser[]>(`/api/users/search`, {
-      params: { query }
+      params: { q: query }
     });
     return response.data;
   },
