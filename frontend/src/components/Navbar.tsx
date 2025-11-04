@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Coffee, Plus, LogOut, User, MessageCircle } from 'lucide-react';
+import { Coffee, Plus, LogOut, User, MessageCircle, Sparkles, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useThemeSetter } from '@/hooks/useThemeSetter';
+import { useTheme } from '@/context/ThemeContext';
 import { Button } from './ui/button';
 import { SearchBar } from './SearchBar';
 import { NotificationsDropdown } from './NotificationsDropdown';
@@ -10,14 +10,20 @@ import { motion } from 'framer-motion';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
+  const { currentSide } = useTheme();
   const navigate = useNavigate();
-  
-  // Automatically set theme based on user's side
-  useThemeSetter();
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  // Get the side label dynamically from context
+  const getSideLabel = () => {
+    if (!user || !currentSide) return null;
+    const emoji = currentSide === 'coffee' ? '☕' : '🍵';
+    const label = currentSide === 'coffee' ? 'Coffee Lover' : 'Tea Lover';
+    return `${emoji} ${label}`;
   };
 
   return (
@@ -57,6 +63,18 @@ export const Navbar = () => {
                   </Button>
                 </Link>
 
+                <Link to="/barista">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <Sparkles className="w-4 h-4" /> AI Barista
+                  </Button>
+                </Link>
+
+                <Link to="/map">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <MapPin className="w-4 h-4" /> Map
+                  </Button>
+                </Link>
+
                 <SearchBar />
                 
                 <NotificationsDropdown />
@@ -76,9 +94,11 @@ export const Navbar = () => {
                     )}
                     <div className="hidden md:block">
                       <p className="text-sm font-medium">{user.username}</p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {user.side === 'coffee' ? '☕' : '🍵'} {user.side} lover
-                      </p>
+                      {getSideLabel() && (
+                        <p className="text-xs text-muted-foreground">
+                          {getSideLabel()}
+                        </p>
+                      )}
                     </div>
                   </Link>
                   

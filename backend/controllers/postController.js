@@ -328,5 +328,180 @@ const deletePost = async (req, res) => {
   }
 };
 
-module.exports = { getPosts, getPost, createPost, likePost, deletePost };
+// Get discover feed - all public posts
+const getDiscoverFeed = async (req, res) => {
+  try {
+    const posts = await Post.find({})
+      .populate("userId", "username side avatar")
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    const formattedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const comments = await Comment.find({ postId: post._id })
+          .populate("userId", "username side")
+          .sort({ createdAt: 1 })
+          .limit(10);
+
+        return {
+          _id: post._id.toString(),
+          title: post.title,
+          description: post.description,
+          imageUrl: post.imageUrl,
+          side: post.side,
+          userId: post.userId._id.toString(),
+          user: {
+            username: post.userId.username,
+            side: post.userId.side,
+            avatar: post.userId.avatar
+          },
+          likes: post.likes.length,
+          likedBy: post.likes.map(id => id.toString()),
+          comments: comments.map(comment => ({
+            _id: comment._id.toString(),
+            user: {
+              username: comment.userId.username,
+              side: comment.userId.side
+            },
+            text: comment.text,
+            createdAt: comment.createdAt.toISOString()
+          })),
+          createdAt: post.createdAt.toISOString()
+        };
+      })
+    );
+
+    res.json(formattedPosts);
+  } catch (err) {
+    console.error("Error getting discover feed:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get friends feed - only posts from user's friends
+const getFriendsFeed = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId).populate("friends");
+
+    if (!user || !user.friends || user.friends.length === 0) {
+      return res.json([]);
+    }
+
+    const friendIds = user.friends.map(friend => friend._id);
+    
+    const posts = await Post.find({ userId: { $in: friendIds } })
+      .populate("userId", "username side avatar")
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    const formattedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const comments = await Comment.find({ postId: post._id })
+          .populate("userId", "username side")
+          .sort({ createdAt: 1 })
+          .limit(10);
+
+        return {
+          _id: post._id.toString(),
+          title: post.title,
+          description: post.description,
+          imageUrl: post.imageUrl,
+          side: post.side,
+          userId: post.userId._id.toString(),
+          user: {
+            username: post.userId.username,
+            side: post.userId.side,
+            avatar: post.userId.avatar
+          },
+          likes: post.likes.length,
+          likedBy: post.likes.map(id => id.toString()),
+          comments: comments.map(comment => ({
+            _id: comment._id.toString(),
+            user: {
+              username: comment.userId.username,
+              side: comment.userId.side
+            },
+            text: comment.text,
+            createdAt: comment.createdAt.toISOString()
+          })),
+          createdAt: post.createdAt.toISOString()
+        };
+      })
+    );
+
+    res.json(formattedPosts);
+  } catch (err) {
+    console.error("Error getting friends feed:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get side feed - only posts from users on the same side
+const getSideFeed = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user || !user.side) {
+      return res.status(400).json({ message: "User side not found" });
+    }
+
+    const posts = await Post.find({ side: user.side })
+      .populate("userId", "username side avatar")
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    const formattedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const comments = await Comment.find({ postId: post._id })
+          .populate("userId", "username side")
+          .sort({ createdAt: 1 })
+          .limit(10);
+
+        return {
+          _id: post._id.toString(),
+          title: post.title,
+          description: post.description,
+          imageUrl: post.imageUrl,
+          side: post.side,
+          userId: post.userId._id.toString(),
+          user: {
+            username: post.userId.username,
+            side: post.userId.side,
+            avatar: post.userId.avatar
+          },
+          likes: post.likes.length,
+          likedBy: post.likes.map(id => id.toString()),
+          comments: comments.map(comment => ({
+            _id: comment._id.toString(),
+            user: {
+              username: comment.userId.username,
+              side: comment.userId.side
+            },
+            text: comment.text,
+            createdAt: comment.createdAt.toISOString()
+          })),
+          createdAt: post.createdAt.toISOString()
+        };
+      })
+    );
+
+    res.json(formattedPosts);
+  } catch (err) {
+    console.error("Error getting side feed:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { 
+  getPosts, 
+  getPost, 
+  createPost, 
+  likePost, 
+  deletePost,
+  getDiscoverFeed,
+  getFriendsFeed,
+  getSideFeed
+};
 

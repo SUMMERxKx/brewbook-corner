@@ -27,7 +27,7 @@ import { motion } from 'framer-motion';
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, updateUser } = useAuth();
   const [profile, setProfile] = useState<UserProfileType | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,13 +102,19 @@ export default function UserProfile() {
   };
 
   const handleSwitchSide = async () => {
-    if (!profile) return;
+    if (!profile || !currentUser) return;
     
     setSwitchingSide(true);
     try {
       const response = await usersAPI.switchSide(profile._id);
       toast.success(response.message);
       setShowSwitchDialog(false);
+      
+      // Update user in AuthContext to trigger theme change
+      if (currentUser._id === profile._id) {
+        updateUser(response.user);
+      }
+      
       loadProfile();
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to switch side';

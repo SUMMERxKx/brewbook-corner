@@ -76,15 +76,23 @@ brewbook/
    ```
 
 3. **Create `.env` file** (copy from `.env.example`):
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Then edit `.env` and set the following variables:
    ```env
-   PORT=5000
-   MONGO_URI=your_mongodb_atlas_uri
-   JWT_SECRET=supersecretkey
-   NODE_ENV=development
-   FRONTEND_URL=http://localhost:5173
+   PORT=5001
+   MONGODB_URI=your_mongodb_atlas_uri
+   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+   FRONTEND_URL=http://localhost:8080
+   OPENAI_API_KEY=your-openai-api-key-here  # Optional: Leave empty for mock responses
    ```
 
-4. **Replace `MONGO_URI`** with your MongoDB Atlas connection string
+4. **Replace the values:**
+   - `MONGODB_URI` - Your MongoDB Atlas connection string
+   - `JWT_SECRET` - A secure random string for JWT tokens
+   - `OPENAI_API_KEY` - (Optional) Get from https://platform.openai.com/api-keys
 
 5. **Start the server:**
    ```bash
@@ -107,17 +115,27 @@ brewbook/
    npm install
    ```
 
-3. **Create `.env` file:**
+3. **Create `.env` file** (copy from `.env.example`):
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Then edit `.env` and set:
    ```env
-   VITE_API_BASE_URL=http://localhost:5000
+   VITE_API_BASE_URL=http://localhost:5001
+   VITE_GOOGLE_MAPS_API_KEY=your-google-maps-api-key-here  # Optional: Leave empty to use OpenStreetMap
    ```
 
-4. **Start the development server:**
+4. **Replace the values:**
+   - `VITE_API_BASE_URL` - Your backend URL (default: http://localhost:5001)
+   - `VITE_GOOGLE_MAPS_API_KEY` - (Optional) Get from https://console.cloud.google.com/google/maps-apis
+
+5. **Start the development server:**
    ```bash
    npm run dev
    ```
 
-5. **Open your browser** at `http://localhost:5173`
+6. **Open your browser** at `http://localhost:8080`
 
 ## 🔐 API Endpoints
 
@@ -152,17 +170,19 @@ Authorization: Bearer <token>
 4. Set build command: `cd backend && npm install`
 5. Set start command: `cd backend && npm start`
 6. Add environment variables:
-   - `MONGO_URI` - Your MongoDB Atlas URI
+   - `MONGODB_URI` - Your MongoDB Atlas URI
    - `JWT_SECRET` - A secure random string
-   - `NODE_ENV=production`
+   - `PORT=5001` (or your preferred port)
    - `FRONTEND_URL` - Your frontend URL (e.g., `https://your-app.vercel.app`)
+   - `OPENAI_API_KEY` - (Optional) Your OpenAI API key for AI Barista feature
 
 #### Frontend on Vercel
 1. Push your code to GitHub
 2. Import project on [Vercel](https://vercel.com)
 3. Set root directory to `frontend`
-4. Add environment variable:
+4. Add environment variables:
    - `VITE_API_BASE_URL` - Your backend URL (e.g., `https://your-backend.onrender.com`)
+   - `VITE_GOOGLE_MAPS_API_KEY` - (Optional) Your Google Maps API key
 5. Deploy
 
 ### Option B: Combined Deployment (Single App)
@@ -237,7 +257,26 @@ Authorization: Bearer <token>
 - ✅ **Helmet** - Security headers
 - ✅ **CORS** - Configured for frontend origin
 - ✅ **Input Validation** - All endpoints validate required fields
-- ✅ **Environment Variables** - Sensitive data in `.env` files
+- ✅ **Environment Variables** - Sensitive data in `.env` files (never commit to Git)
+- ✅ **API Keys** - All API keys stored in environment variables
+
+## 🔑 Environment Variables
+
+### Backend (`.env` in `backend/` directory)
+- `MONGODB_URI` - MongoDB connection string (required)
+- `JWT_SECRET` - Secret key for JWT tokens (required)
+- `PORT` - Server port (default: 5001)
+- `FRONTEND_URL` - Frontend URL for CORS (required)
+- `OPENAI_API_KEY` - OpenAI API key for AI Barista (optional, uses mock if not set)
+
+### Frontend (`.env` in `frontend/` directory)
+- `VITE_API_BASE_URL` - Backend API URL (required)
+- `VITE_GOOGLE_MAPS_API_KEY` - Google Maps API key (optional, uses OpenStreetMap if not set)
+
+**⚠️ Important:** 
+- Never commit `.env` files to Git (they're already in `.gitignore`)
+- Copy `.env.example` to `.env` and fill in your actual values
+- `.env.example` files are safe to commit and show what variables are needed
 
 ## 📝 Features
 

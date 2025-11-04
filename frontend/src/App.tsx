@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { FeedProvider } from "./context/FeedContext";
 import { PrivateRoute } from "./components/PrivateRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -16,6 +17,8 @@ import CreatePost from "./pages/CreatePost";
 import PostDetail from "./pages/PostDetail";
 import UserProfile from "./pages/UserProfile";
 import Chat from "./pages/Chat";
+import Barista from "./pages/Barista";
+import MapView from "./pages/MapView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,8 +26,9 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <ThemeProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <FeedProvider>
           <TooltipProvider>
           <Sonner />
           <Toaster 
@@ -83,11 +87,28 @@ const App = () => (
                 </PrivateRoute>
               } 
             />
+            <Route 
+              path="/barista" 
+              element={
+                <PrivateRoute>
+                  <Barista />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/map" 
+              element={
+                <PrivateRoute>
+                  <MapView />
+                </PrivateRoute>
+              } 
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
-        </AuthProvider>
-      </ThemeProvider>
+        </FeedProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
 );

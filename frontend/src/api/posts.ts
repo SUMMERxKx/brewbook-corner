@@ -34,4 +34,22 @@ export const postsAPI = {
     const response = await axiosInstance.delete<{ message: string }>(`/api/posts/${postId}`);
     return response.data;
   },
+
+  // Multi-feed endpoints
+  async getDiscoverFeed(): Promise<Post[]> {
+    const response = await axiosInstance.get<Post[]>('/api/posts/discover');
+    return response.data;
+  },
+
+  async getFriendsFeed(): Promise<Post[]> {
+    const response = await axiosInstance.get<Post[]>('/api/posts/friends');
+    return response.data;
+  },
+
+  async getSideFeed(): Promise<Post[]> {
+    const response = await axiosInstance.get<Post[]>('/api/posts/side');
+    return response.data;
+  },
 };
+
+export type FeedType = 'discover' | 'friends' | 'side';

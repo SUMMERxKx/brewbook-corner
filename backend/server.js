@@ -12,6 +12,7 @@ const commentRoutes = require("./routes/commentRoutes");
 const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 // Initialize Express app
 const app = express();
@@ -39,6 +40,7 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Health check endpoint (before static serving)
 app.get("/api/health", (req, res) => {

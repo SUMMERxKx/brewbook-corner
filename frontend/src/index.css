@@ -8,7 +8,8 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Base colors - warm café palette */
+    /* Base colors - dynamically set by ThemeContext */
+    /* Default to coffee theme, will be overridden by ThemeProvider */
     --background: 32 25% 97%;
     --foreground: 25 35% 15%;
 
@@ -18,19 +19,16 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 25 35% 15%;
 
-    /* Coffee brown primary */
     --primary: 25 50% 35%;
     --primary-foreground: 32 25% 97%;
 
-    /* Warm secondary */
     --secondary: 35 40% 90%;
     --secondary-foreground: 25 35% 15%;
 
     --muted: 35 30% 94%;
     --muted-foreground: 25 20% 45%;
 
-    /* Tea green accent */
-    --accent: 95 35% 50%;
+    --accent: 25 60% 40%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;

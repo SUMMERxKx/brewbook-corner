@@ -1,8 +1,22 @@
 const express = require("express");
 const router = express.Router();
-const { getPosts, getPost, createPost, likePost, deletePost } = require("../controllers/postController");
+const { 
+  getPosts, 
+  getPost, 
+  createPost, 
+  likePost, 
+  deletePost,
+  getDiscoverFeed,
+  getFriendsFeed,
+  getSideFeed
+} = require("../controllers/postController");
 const { addComment } = require("../controllers/commentController");
 const authMiddleware = require("../middleware/authMiddleware");
+
+// Multi-feed endpoints (must come before /:id to avoid route conflicts)
+router.get("/discover", getDiscoverFeed);
+router.get("/friends", authMiddleware, getFriendsFeed);
+router.get("/side", authMiddleware, getSideFeed);
 
 // Get all posts (optional side filter via query param)
 router.get("/", getPosts);

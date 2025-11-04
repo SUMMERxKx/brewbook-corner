@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   side: { type: String, enum: ["coffee", "tea"], required: true },
   bio: { type: String, default: "" },
+  avatar: { type: String, default: "" }, // User avatar URL
   points: { type: Number, default: 0 },
   badges: [{ type: String }],
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
