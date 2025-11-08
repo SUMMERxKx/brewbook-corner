@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const path = require("path");
+const fs = require("fs");
 const connectDB = require("./config/db");
 
 // Import routes
@@ -13,6 +14,7 @@ const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
 
 // Initialize Express app
 const app = express();
@@ -30,6 +32,17 @@ app.use(cors({
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
+// Serve uploaded images statically
+const uploadsDirectory = process.env.UPLOADS_DIR
+  ? path.resolve(__dirname, process.env.UPLOADS_DIR)
+  : path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadsDirectory)) {
+  fs.mkdirSync(uploadsDirectory, { recursive: true });
+}
+
+app.use("/uploads", express.static(uploadsDirectory));
+
 // Connect to MongoDB
 connectDB();
 
@@ -41,6 +54,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Health check endpoint (before static serving)
 app.get("/api/health", (req, res) => {

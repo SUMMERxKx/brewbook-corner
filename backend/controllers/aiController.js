@@ -1,17 +1,20 @@
 require("dotenv").config();
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// AI Barista controller - generates recipes using OpenAI
+// AI Barista controller - generates recipes using Gemini (replaced OpenAI)
 const getAIBaristaResponse = async (req, res) => {
   try {
     const { prompt, side } = req.body;
-    const userId = req.user?.id;
+    const trimmedPrompt = typeof prompt === "string" ? prompt.trim() : "";
 
-    if (!prompt) {
+    if (!trimmedPrompt) {
       return res.status(400).json({ message: "Prompt is required" });
     }
 
-    // Check if OpenAI API key is configured
-    if (!process.env.OPENAI_API_KEY) {
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+
+    // Fallback when Gemini key is not available
+    if (!geminiApiKey) {
       // Return a mock response for development/testing
       const mockRecipes = {
         coffee: {
@@ -65,27 +68,26 @@ const getAIBaristaResponse = async (req, res) => {
       });
     }
 
-    // Use OpenAI API if configured
-    const OpenAI = require("openai");
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+    // Use Gemini API
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || "gemini-1.5-flash"
     });
 
     const systemPrompt = side === 'tea' 
       ? "You are a friendly tea expert barista. Create detailed, step-by-step tea recipes based on user requests. Always include ingredients, clear instructions, and helpful tips. Format your response as a recipe with ingredients list, numbered steps, and tips."
       : "You are a friendly coffee expert barista. Create detailed, step-by-step coffee recipes based on user requests. Always include ingredients, clear instructions, and helpful tips. Format your response as a recipe with ingredients list, numbered steps, and tips.";
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 500,
-    });
+    const result = await model.generateContent([
+      { text: systemPrompt },
+      { text: `User request: ${trimmedPrompt}` }
+    ]);
 
-    const aiResponse = completion.choices[0].message.content;
+    const aiResponse = result?.response?.text()?.trim();
+
+    if (!aiResponse) {
+      throw new Error("Gemini returned an empty response");
+    }
 
     // Parse the response to extract recipe structure
     const recipe = {
@@ -102,10 +104,13 @@ const getAIBaristaResponse = async (req, res) => {
       recipe: recipe
     });
   } catch (error) {
-    console.error("AI Barista error:", error);
+    console.error("AI Barista error (Gemini):", error);
+    const fallbackMessage = "I'm brewing up my skills! Please try again in a moment.";
+
     res.status(500).json({ 
       error: "Failed to generate recipe",
-      message: error.message 
+      message: error?.message || fallbackMessage,
+      fallback: fallbackMessage
     });
   }
 };

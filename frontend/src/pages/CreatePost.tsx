@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, UploadCloud, Trash2 } from 'lucide-react';
 import { postsAPI } from '@/api/posts';
+import { uploadAPI } from '@/api/upload';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,149 +15,115 @@ import { motion } from 'framer-motion';
 export default function CreatePost() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [imageValid, setImageValid] = useState<boolean | null>(null);
-  const [validatingImage, setValidatingImage] = useState(false);
-  const imageRef = useRef<HTMLImageElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
 
-  // Validate image URL is loadable
-  const validateImage = (url: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (!url || !url.trim()) {
-        resolve(false);
-        return;
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
       }
+    };
+  }, [imagePreview]);
 
-      // Validate URL format
-      try {
-        new URL(url.trim());
-      } catch {
-        resolve(false);
-        return;
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file (JPG, PNG, GIF, or WebP).');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
+      return;
+    }
 
-      const img = new Image();
-      let resolved = false;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image is too large. Maximum size is 5MB.');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
 
-      const cleanup = () => {
-        if (!resolved) {
-          resolved = true;
-          img.onload = null;
-          img.onerror = null;
-        }
-      };
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
 
-      img.onload = () => {
-        cleanup();
-        resolve(true);
-      };
-
-      img.onerror = () => {
-        cleanup();
-        resolve(false);
-      };
-
-      // Set timeout (10 seconds)
-      setTimeout(() => {
-        if (!resolved) {
-          cleanup();
-          resolve(false);
-        }
-      }, 10000);
-
-      img.src = url.trim();
-    });
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setUploadedImageUrl(null); // force re-upload if file changes
   };
 
-  // Validate image when URL changes
-  useEffect(() => {
-    const checkImage = async () => {
-      if (!imageUrl || !imageUrl.trim()) {
-        setImageValid(null);
-        return;
-      }
-
-      setValidatingImage(true);
-      const isValid = await validateImage(imageUrl);
-      setImageValid(isValid);
-      setValidatingImage(false);
-    };
-
-    // Debounce validation
-    const timer = setTimeout(checkImage, 500);
-    return () => clearTimeout(timer);
-  }, [imageUrl]);
+  const handleRemoveImage = () => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImageFile(null);
+    setImagePreview(null);
+    setUploadedImageUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!imageFile) {
+      toast.error('Please upload an image for your recipe.');
+      return;
+    }
+
     setLoading(true);
-    
+
     try {
-      // Validate imageUrl before submitting
-      const trimmedImageUrl = imageUrl.trim();
-      if (!trimmedImageUrl) {
-        toast.error('Please provide an image URL');
-        setLoading(false);
-        return;
+      let imageUrlToUse = uploadedImageUrl;
+
+      if (!imageUrlToUse) {
+        setUploadingImage(true);
+        const uploadResult = await uploadAPI.uploadImage(imageFile);
+        imageUrlToUse = uploadResult.url;
+        setUploadedImageUrl(imageUrlToUse);
       }
 
-      // Validate URL format
-      try {
-        new URL(trimmedImageUrl);
-      } catch (error) {
-        toast.error('Please provide a valid image URL (must start with http:// or https://)');
-        setLoading(false);
-        return;
-      }
-
-      // Check if image is valid
-      if (imageValid === false) {
-        toast.error('Image URL is not accessible. Please use a valid, publicly accessible image URL.');
-        setLoading(false);
-        return;
-      }
-
-      // If still validating, wait for it
-      if (imageValid === null && validatingImage) {
-        toast.error('Please wait for image validation to complete');
-        setLoading(false);
-        return;
-      }
-
-      // Log what we're sending
-      console.log('Creating post with data:', { title, description, imageUrl: trimmedImageUrl });
-
-      // Create post data with current imageUrl value
-      const postData = { 
-        title: title.trim(), 
-        description: description.trim(), 
-        imageUrl: trimmedImageUrl 
+      const postData = {
+        title: title.trim(),
+        description: description.trim(),
+        imageUrl: imageUrlToUse as string
       };
-      
-      console.log('Sending post data:', postData);
-      
-      const createdPost = await postsAPI.createPost(postData);
-      
-      // Log the response
-      console.log('Post created successfully:', createdPost);
-      console.log('Post imageUrl:', createdPost.imageUrl);
-      
-      // Clear form after successful submission
+
+      await postsAPI.createPost(postData);
+
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
       setTitle('');
       setDescription('');
-      setImageUrl('');
-      
+      setImageFile(null);
+      setImagePreview(null);
+      setUploadedImageUrl(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
       toast.success('Post created successfully!');
-      
-      // Navigate with state to force Feed refresh
       navigate('/feed', { replace: true, state: { refresh: true, timestamp: Date.now() } });
     } catch (error: any) {
       console.error('Error creating post:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create post';
       toast.error(errorMessage);
     } finally {
+      setUploadingImage(false);
       setLoading(false);
     }
   };
@@ -212,56 +179,45 @@ export default function CreatePost() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="imageUrl">Image URL</Label>
+                  <Label htmlFor="image">Recipe Image</Label>
                   <Input
-                    id="imageUrl"
-                    type="url"
-                    placeholder="https://example.com/image.jpg"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
+                    id="image"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    Paste a URL to an image of your recipe. Image upload coming soon!
+                    Upload a JPG, PNG, GIF, or WebP image up to 5MB.
                   </p>
                 </div>
 
-                {imageUrl && (
-                  <div className="space-y-2">
-                    <div className="rounded-lg overflow-hidden border relative">
-                      {validatingImage ? (
-                        <div className="w-full h-64 flex items-center justify-center bg-muted">
-                          <p className="text-muted-foreground">Validating image...</p>
-                        </div>
-                      ) : imageValid === false ? (
-                        <div className="w-full h-64 flex flex-col items-center justify-center bg-destructive/10 border-destructive">
-                          <AlertCircle className="w-8 h-8 text-destructive mb-2" />
-                          <p className="text-destructive font-medium">Image URL is not accessible</p>
-                          <p className="text-sm text-destructive/80 mt-1">Please use a valid, publicly accessible image URL</p>
-                        </div>
-                      ) : imageValid === true ? (
-                        <div className="relative">
-                          <img
-                            ref={imageRef}
-                            src={imageUrl}
-                            alt="Preview"
-                            className="w-full h-64 object-cover"
-                          />
-                          <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
-                            <CheckCircle2 className="w-4 h-4" />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="w-full h-64 flex items-center justify-center bg-muted">
-                          <p className="text-muted-foreground">Enter an image URL to preview</p>
-                        </div>
-                      )}
+                {imagePreview && (
+                  <div className="space-y-3">
+                    <div className="relative rounded-lg overflow-hidden border">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-64 object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2 gap-2"
+                        onClick={handleRemoveImage}
+                      >
+                        <Trash2 className="w-4 h-4" /> Remove
+                      </Button>
                     </div>
-                    {imageValid === false && (
-                      <p className="text-sm text-destructive">
-                        The image URL you provided is not accessible. Make sure the URL is public and points to a valid image file.
-                      </p>
-                    )}
+                  </div>
+                )}
+
+                {!imagePreview && (
+                  <div className="flex items-center gap-3 rounded-lg border border-dashed border-muted p-4 bg-muted/50 text-muted-foreground">
+                    <UploadCloud className="w-6 h-6" />
+                    <p className="text-sm">Upload an image to showcase your brew.</p>
                   </div>
                 )}
 
@@ -276,10 +232,10 @@ export default function CreatePost() {
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={loading || validatingImage || imageValid === false} 
+                    disabled={loading || uploadingImage || !imageFile}
                     className="flex-1"
                   >
-                    {loading ? 'Creating...' : validatingImage ? 'Validating image...' : 'Create Post'}
+                    {uploadingImage ? 'Uploading image...' : loading ? 'Creating...' : 'Create Post'}
                   </Button>
                 </div>
               </form>

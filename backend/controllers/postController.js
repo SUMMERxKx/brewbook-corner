@@ -114,36 +114,27 @@ const createPost = async (req, res) => {
     
     const { title, description, imageUrl } = req.body;
 
-    // Debug logging
-    console.log("Creating post with data:", { title, description, imageUrl });
-    console.log("imageUrl type:", typeof imageUrl);
-    console.log("imageUrl value:", imageUrl);
+    const normalizedImageUrl = typeof imageUrl === "string" ? imageUrl.trim() : "";
 
-    // Validate imageUrl is provided
-    if (!imageUrl || imageUrl.trim() === "") {
-      return res.status(400).json({ message: "Image URL is required" });
+    if (!normalizedImageUrl) {
+      return res.status(400).json({ message: "An image is required. Please upload an image for your recipe." });
     }
-
+ 
     // Get user to determine their side
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
-    // Create post
-    const trimmedImageUrl = imageUrl.trim();
-    console.log("Saving post with imageUrl:", trimmedImageUrl);
-    
+ 
+    // Create post with uploaded image URL/path
     const post = await Post.create({
       userId: req.user.id,
       title,
       description,
-      imageUrl: trimmedImageUrl, // Trim whitespace
+      imageUrl: normalizedImageUrl,
       side: user.side
     });
     
-    console.log("Post saved to database with imageUrl:", post.imageUrl);
-
     // Award points for creating a post (+10 points)
     let pointsToAdd = 10;
     const today = new Date();
@@ -169,15 +160,6 @@ const createPost = async (req, res) => {
     user.badges = updateBadges(user.points);
     await user.save();
 
-    // Debug: Log saved post
-    console.log("Post created successfully:", {
-      id: post._id,
-      title: post.title,
-      imageUrl: post.imageUrl,
-      pointsAdded: pointsToAdd,
-      totalPoints: user.points
-    });
-
     // Populate user info and format response
     await post.populate("userId", "username side");
 
@@ -196,12 +178,6 @@ const createPost = async (req, res) => {
       comments: [],
       createdAt: post.createdAt.toISOString()
     };
-
-    // Debug: Log response
-    console.log("Sending formatted post:", {
-      _id: formattedPost._id,
-      imageUrl: formattedPost.imageUrl
-    });
 
     res.status(201).json(formattedPost);
   } catch (err) {
