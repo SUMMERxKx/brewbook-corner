@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Coffee, Plus, LogOut, User, MessageCircle, Sparkles, MapPin } from 'lucide-react';
+import { Coffee, Plus, LogOut, User, MessageCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/context/ThemeContext';
 import { Button } from './ui/button';
@@ -69,11 +69,7 @@ export const Navbar = () => {
                   </Button>
                 </Link>
 
-                <Link to="/map">
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <MapPin className="w-4 h-4" /> Map
-                  </Button>
-                </Link>
+                {/* Map tab temporarily hidden while feature is disabled */}
 
                 <SearchBar />
                 

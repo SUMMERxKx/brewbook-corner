@@ -18,7 +18,6 @@ import PostDetail from "./pages/PostDetail";
 import UserProfile from "./pages/UserProfile";
 import Chat from "./pages/Chat";
 import Barista from "./pages/Barista";
-import MapView from "./pages/MapView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -95,14 +94,7 @@ const App = () => (
                 </PrivateRoute>
               } 
             />
-            <Route 
-              path="/map" 
-              element={
-                <PrivateRoute>
-                  <MapView />
-                </PrivateRoute>
-              } 
-            />
+            {/* Map route temporarily disabled; re-enable when feature returns */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
