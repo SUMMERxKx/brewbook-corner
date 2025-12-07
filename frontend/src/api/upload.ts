@@ -3,7 +3,7 @@ import axiosInstance from './axios';
 interface UploadResponse {
   message: string;
   url: string;
-  path?: string;
+  publicId?: string; // Cloudinary public ID for potential future deletion
 }
 
 export const uploadAPI = {

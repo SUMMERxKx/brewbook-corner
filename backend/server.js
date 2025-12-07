@@ -3,7 +3,6 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const path = require("path");
-const fs = require("fs");
 const connectDB = require("./config/db");
 
 // Import routes
@@ -32,16 +31,8 @@ app.use(cors({
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
-// Serve uploaded images statically
-const uploadsDirectory = process.env.UPLOADS_DIR
-  ? path.resolve(__dirname, process.env.UPLOADS_DIR)
-  : path.join(__dirname, "uploads");
-
-if (!fs.existsSync(uploadsDirectory)) {
-  fs.mkdirSync(uploadsDirectory, { recursive: true });
-}
-
-app.use("/uploads", express.static(uploadsDirectory));
+// Note: Image uploads are now handled by Cloudinary (see uploadRoutes.js)
+// No local file storage needed
 
 // Connect to MongoDB
 connectDB();

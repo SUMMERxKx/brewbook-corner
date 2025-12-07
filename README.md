@@ -19,6 +19,7 @@ A full-stack recipe sharing application where users pick a side (coffee or tea) 
 - **Helmet** - Security middleware
 - **CORS** - Cross-origin resource sharing
 - **Gemini Generative AI** - AI Barista integration (optional)
+- **Cloudinary** - Cloud-based image storage and optimization
 
 ## 📁 Project Structure
 
@@ -90,13 +91,17 @@ brewbook/
    MONGODB_URI=your_mongodb_atlas_uri
    JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
    FRONTEND_URL=http://localhost:8080
-   OPENAI_API_KEY=your-openai-api-key-here  # Optional: Leave empty for mock responses
+   GEMINI_API_KEY=your-gemini-api-key-here  # Optional: Leave empty for mock responses
+   CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+   CLOUDINARY_API_KEY=your-cloudinary-api-key
+   CLOUDINARY_API_SECRET=your-cloudinary-api-secret
    ```
 
 4. **Replace the values:**
    - `MONGODB_URI` - Your MongoDB Atlas connection string
    - `JWT_SECRET` - A secure random string for JWT tokens
-   - `OPENAI_API_KEY` - (Optional) Get from https://platform.openai.com/api-keys
+   - `GEMINI_API_KEY` - (Optional) Get from https://aistudio.google.com/app/apikey
+   - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` - Get from https://cloudinary.com/console (sign up for a free account)
 
 5. **Start the server:**
    ```bash
@@ -159,8 +164,11 @@ brewbook/
 
 ### Uploads
 - `POST /api/upload` - Upload an image for posts (requires authentication, multipart/form-data with `image` field)
-  - Returns: `{ message, url, path }`
-  - Use the returned `url` when creating a post
+  - Images are uploaded to Cloudinary and automatically optimized
+  - Returns: `{ message, url, publicId }`
+  - Use the returned `url` (Cloudinary secure URL) when creating a post
+  - Max file size: 5MB
+  - Supported formats: JPEG, PNG, WebP, GIF
 
 ### Authentication
 Protected routes require a JWT token in the Authorization header:

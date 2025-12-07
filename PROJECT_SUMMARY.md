@@ -69,6 +69,7 @@ brewbook/
 - **dotenv** for configuration
 - **Socket.IO** (real-time chat support)
 - **Gemini Generative AI SDK** (AI Barista – optional)
+- **Cloudinary** (cloud-based image storage and optimization)
 
 ### Frontend
 - **React 18** + **TypeScript**
@@ -88,9 +89,12 @@ MONGODB_URI=your-mongodb-connection-string
 JWT_SECRET=your-super-secret-jwt-key
 FRONTEND_URL=http://localhost:8080
 GEMINI_API_KEY=your-gemini-api-key   # optional – enables AI Barista
-UPLOADS_DIR=uploads
+CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+CLOUDINARY_API_KEY=your-cloudinary-api-key
+CLOUDINARY_API_SECRET=your-cloudinary-api-secret
 ```
-- AI Barista falls back to canned responses when `OPENAI_API_KEY` is absent.
+- AI Barista falls back to canned responses when `GEMINI_API_KEY` is absent.
+- Image uploads are handled by Cloudinary (cloud storage with automatic optimization).
 
 ### Frontend (`frontend/.env` – create from `.env.example`)
 ```
@@ -122,7 +126,9 @@ VITE_GOOGLE_MAPS_API_KEY=             # optional – map currently disabled but 
 - `POST /api/ai/barista` – body `{ prompt, side }`, returns conversational response + structured recipe
 
 ### Uploads
-- `POST /api/upload` – multipart/form-data (`image` field); returns `{ message, url, path }`
+- `POST /api/upload` – multipart/form-data (`image` field); uploads to Cloudinary and returns `{ message, url, publicId }`
+  - Images are automatically optimized (max 1200x1200, auto quality/format)
+  - Returns Cloudinary secure URL for use in posts
 
 ## Current Status (Nov 2025)
 
@@ -135,7 +141,8 @@ VITE_GOOGLE_MAPS_API_KEY=             # optional – map currently disabled but 
 6. **Backend feed endpoints** (`/discover`, `/friends`, `/side`) with optimized population.
 7. **Environment templates** (`.env.example`) and README documentation.
 8. **User schema avatar field** for richer feed/profile display.
-9. **GitHub main branch** updated with all features and env tooling.
+9. **Cloudinary integration** for cloud-based image storage with automatic optimization.
+10. **GitHub main branch** updated with all features and env tooling.
 
 ### ⚠️ Notes & Considerations
 - Gemini and Google APIs are optional but recommended for full experience.
@@ -170,7 +177,7 @@ cd frontend
 ## Deployment Guide (Recommended Setup)
 - **Backend** → Render.com (Web Service)
   - Commands: `cd backend && npm install` (build) / `cd backend && npm start`
-  - Env vars: `MONGODB_URI`, `JWT_SECRET`, `PORT`, `FRONTEND_URL`, optional `GEMINI_API_KEY`
+  - Env vars: `MONGODB_URI`, `JWT_SECRET`, `PORT`, `FRONTEND_URL`, optional `GEMINI_API_KEY`, `CLOUDINARY_*` (cloud_name, api_key, api_secret)
 - **Frontend** → Vercel (root `frontend/`)
   - Env vars: `VITE_API_BASE_URL`, optional `VITE_GOOGLE_MAPS_API_KEY`
 - Ensure CORS `FRONTEND_URL` matches deployed frontend URL.
@@ -193,7 +200,7 @@ cd frontend
 3. Add **feed pagination/infinite scroll** and caching via React Query.
 4. Expand **testing coverage** (unit + integration) for new features.
 5. Implement **share-to-feed** capability for AI-generated recipes.
-6. **Image Upload System** – extend metadata (alt text, cropping) and CDN support for uploaded assets.
+6. **Image Upload System** – extend metadata (alt text, cropping) and additional Cloudinary transformations.
 
 ## Key References
 - **Repository:** https://github.com/SUMMERxKx/brewbook-corner.git

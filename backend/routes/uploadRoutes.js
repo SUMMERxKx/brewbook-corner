@@ -1,29 +1,20 @@
 const express = require("express");
-const path = require("path");
-const fs = require("fs");
 const multer = require("multer");
+const { v2: cloudinary } = require("cloudinary");
+const streamifier = require("streamifier");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-const uploadsDir = process.env.UPLOADS_DIR
-  ? path.resolve(__dirname, "..", process.env.UPLOADS_DIR)
-  : path.join(__dirname, "..", "uploads");
-
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const extension = path.extname(file.originalname);
-    cb(null, `image-${uniqueSuffix}${extension}`);
-  }
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+// Configure Multer to use memory storage (we'll upload to Cloudinary from memory)
+const storage = multer.memoryStorage();
 
 const fileFilter = (_req, file, cb) => {
   const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/jpg"];
@@ -42,22 +33,61 @@ const upload = multer({
   }
 });
 
-router.post("/", authMiddleware, upload.single("image"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: "No image file uploaded" });
-  }
+// Helper function to upload buffer to Cloudinary
+const uploadToCloudinary = (buffer, options = {}) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "brewbook", // Organize uploads in a 'brewbook' folder
+        resource_type: "image",
+        transformation: [
+          {
+            width: 1200,
+            height: 1200,
+            crop: "limit", // Limit dimensions while maintaining aspect ratio
+            quality: "auto", // Optimize quality automatically
+            fetch_format: "auto" // Auto-optimize format (WebP when supported)
+          }
+        ],
+        ...options
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
 
-  const relativePath = `/uploads/${req.file.filename}`;
-  const absoluteUrl = `${req.protocol}://${req.get("host")}${relativePath}`;
-
-  return res.status(201).json({
-    message: "Image uploaded successfully",
-    url: absoluteUrl,
-    path: relativePath
+    streamifier.createReadStream(buffer).pipe(uploadStream);
   });
+};
+
+// Upload image endpoint
+router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file uploaded" });
+    }
+
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(req.file.buffer);
+
+    return res.status(201).json({
+      message: "Image uploaded successfully",
+      url: result.secure_url, // Use secure_url for HTTPS
+      publicId: result.public_id // Cloudinary public ID for potential future deletion
+    });
+  } catch (error) {
+    console.error("Cloudinary upload error:", error);
+    return res.status(500).json({
+      message: error.message || "Failed to upload image"
+    });
+  }
 });
 
-// Multer error handler to ensure consistent error responses
+// Error handler for Multer and Cloudinary errors
 router.use((err, _req, res, _next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {
